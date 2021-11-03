@@ -1,7 +1,9 @@
 import { AzureCommunicationTokenCredential } from '@azure/communication-common';
 import {
+  CallComposite,
   CallAdapter,
   createAzureCommunicationCallAdapter,
+  ChatComposite,
   ChatAdapter,
   createAzureCommunicationChatAdapter
 } from '@azure/communication-react';
@@ -33,32 +35,35 @@ function App(): JSX.Element {
   }, [token]);
 
   useEffect(() => {
-    if (credential !== undefined) {
-      const createAdapter = async (credential: AzureCommunicationTokenCredential): Promise<void> => {
-        setChatAdapter(
-          await createAzureCommunicationChatAdapter({
-            endpointUrl,
-            userId: { communicationUserId: userId },
-            displayName,
-            credential,
-            threadId
-          })
-        );
-        setCallAdapter(
-          await createAzureCommunicationCallAdapter({
-            userId: { communicationUserId: userId },
-            displayName,
-            credential,
-            locator: { groupId }
-          })
-        );
-      };
-      createAdapter(credential);
-    }
-  }, [credential]);
+    const createAdapter = async (): Promise<void> => {
+      setChatAdapter(
+        await createAzureCommunicationChatAdapter({
+          endpointUrl,
+          userId: { communicationUserId: userId },
+          displayName,
+          credential: new AzureCommunicationTokenCredential(token),
+          threadId
+        })
+      );
+      setCallAdapter(
+        await createAzureCommunicationCallAdapter({
+          userId: { communicationUserId: userId },
+          displayName,
+          credential: new AzureCommunicationTokenCredential(token),
+          locator: { groupId }
+        })
+      );
+    };
+    createAdapter();
+  }, []);
 
   if (!!callAdapter && !!chatAdapter) {
-    return <h1>Hooray! You set up adapters 🎉🎉🎉</h1>;
+    return (
+      <>
+        <ChatComposite adapter={chatAdapter} />
+        <CallComposite adapter={callAdapter} />
+      </>
+    );
   }
   if (credential === undefined) {
     return <h3>Failed to construct credential. Provided token is malformed.</h3>;
